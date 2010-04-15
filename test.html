@@ -1,0 +1,28 @@
+<html>
+<head>
+  <title>NodeStream</title>
+  <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
+  <script src="http://platform.twitter.com/anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>
+
+  <script type="text/javascript">  
+twttr.anywhere.config({
+  assetHost: 'twitter-anywhere.s3.amazonaws.com'
+});
+twttr.anywhere(function(T) {
+  if (T.isConnected()) {
+    // your app!
+    alert("logged in");
+
+  } else {
+    alert("not logged in");
+    T('#login').connectButton();
+  }
+});
+</script>
+
+</head>
+<body>
+  <h2>Test</h2>
+  <div id="login"></div>
+</body>
+</html>

@@ -2,18 +2,33 @@
 <head>
   <title>NodeStream</title>
   <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
+  <!--
   <script type="text/javascript" src="javascripts/swfobject.js"></script>
   <script type="text/javascript" src="javascripts/FABridge.js"></script>
   <script type="text/javascript" src="javascripts/web_socket.js"></script>
+  <script src="anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>
+  -->
   <script src="http://platform.twitter.com/anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>
 
   <script type="text/javascript">
-    var webSocket = new WebSocket("ws://nodestream.local:8080/userstream"),
-        buffer = "",
-        friends = [];
+  
+    function connect() {
+      alert("connected to twitter")
+      // $("#status").html("connecting...");
+      // webSocket.send('start');
+    }
+    function disconnect() {
+      alert("disconnected")
+    }
+
+
+    // var webSocket = new WebSocket("ws://nodestream.local:8080/userstream"),
+    //     buffer = "",
+    //     friends = [];
 
     twttr.anywhere.config({
       assetHost: 'twitter-anywhere.s3.amazonaws.com'
+      //assetHost: 'nodestream.local'
     });
     twttr.anywhere(function(T) {
       alert("connecting to twitter")
@@ -27,35 +42,27 @@
       }
     });
     
-    function connect() {
-      alert("connected to twitter")
-      // $("#status").html("connecting...");
-      // webSocket.send('start');
-    }
-    function disconnect() {
-      alert("disconnected")
-    }
     
-    webSocket.onmessage = function(event){
-      var object;
-      try {
-        object = JSON.parse(event.data);
-        console.log(object);
-        if(object.friends) {
-          friends = object.friends;
-          $("#stream").append("<li>Loaded friends..."+friends+"</li>");
-        } else {
-          $("#stream").append("<li>"+event.data+"</li>");
-        }
-        buffer = "";
-      } catch(e) {
-        buffer += event.data;
-      }
-    };
-
-    webSocket.onclose = function(event){
-      $("#status").html("not connected");
-    };
+    // webSocket.onmessage = function(event){
+    //   var object;
+    //   try {
+    //     object = JSON.parse(event.data);
+    //     console.log(object);
+    //     if(object.friends) {
+    //       friends = object.friends;
+    //       $("#stream").append("<li>Loaded friends..."+friends+"</li>");
+    //     } else {
+    //       $("#stream").append("<li>"+event.data+"</li>");
+    //     }
+    //     buffer = "";
+    //   } catch(e) {
+    //     buffer += event.data;
+    //   }
+    // };
+    // 
+    // webSocket.onclose = function(event){
+    //   $("#status").html("not connected");
+    // };
   </script>
 </head>
 
