@@ -132,7 +132,7 @@
     var say = function(message) {
       $("#stream").append("<li>"+message+"</li>");
       twttr.anywhere(function(T) {      
-        T("#stream").linkifyUsers();
+        T("#stream li:last-child").hovercards();
       });
     }
   </script>
