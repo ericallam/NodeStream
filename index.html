@@ -1,0 +1,30 @@
+<html>
+<head>
+  <title>NodeStream</title>
+  <script type="text/javascript" src="jquery-1.4.2.min.js"></script> >
+  <script type="text/javascript">
+    new WebSocket("ws://localhost:8080/userstream");
+    webSocket.onopen = function(event){
+      $("#status").html("connecting...");
+      webSocket.send('start');
+    };
+
+    webSocket.onmessage = function(event){
+      // var object = JSON.parse(event.data);
+      // $("#stream").append("<li>"+object.text+"</li>");
+      $("#stream").append("<li>"+event.data+"</li>");
+    };
+
+    webSocket.onclose = function(event){
+      $("#status").html("not connected");
+    };    
+  </script>
+
+
+  </script>
+</head>
+
+  <h2>Stream</h2>
+  <span id="status">Not connected...</span>
+  <ul id="stream"></ul>
+</html>
