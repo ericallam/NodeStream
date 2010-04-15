@@ -11,7 +11,6 @@
   <script type="text/javascript">
   
     function connect() {
-      alert("connected to twitter")
       $("#status").html("connecting...");
       webSocket.send('start');
     }
@@ -25,10 +24,7 @@
       //assetHost: 'nodestream.local'
     });
     twttr.anywhere(function(T) {
-      alert("connecting to twitter")
-      
       if (T.isConnected()) {
-        alert("already connected to twitter")
         connect();
       } else {
         T('#login').connectButton({ authComplete: connect, signOut: disconnect });
@@ -97,40 +93,47 @@
     
     var retweet = function(data){
       console.log('RETWEET');
-      $("#stream").append("<li>"+data.user.screen_name+" retweeted: "+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text+"</li>");
+      say("@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text);
     }
     
     var tweet = function(data){
       console.log('TWEET');
-      $("#stream").append("<li>"+data.user.screen_name+": "+data.text+"</li>");
+      say("@"+data.user.screen_name+": "+data.text);
     }
     
     var favorite = function(data){
       console.log('FAVORITE');
-      $("#stream").append("<li>"+data.source.id+" favorited "+data.target_object.id+"</li>");
+      say(data.source.id+" favorited "+data.target_object.id);
     }
     
     var unfavorite = function(data){
       console.log('UNFAVORITE');
-      $("#stream").append("<li>"+data.source.id+" unfavorited "+data.target_object.id+"</li>");
+      say(data.source.id+" unfavorited "+data.target_object.id);
     }
     
     var follow = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('FOLLOW');
-      $("#stream").append("<li>"+data.source.id+" followed "+data.target.id+"</li>");
+      say(data.source.id+" followed "+data.target.id);
     }
     
     var unfollow = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('UNFOLLOW');
-      $("#stream").append("<li>"+data.source.id+" unfollowed "+data.target.id+"</li>");
+      say(data.source.id+" unfollowed "+data.target.id);
     }
     
     var block = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('BLOCK');
-      $("#stream").append("<li>"+data.source.id+" blocked "+data.target.id+"</li>");
+      say(data.source.id+" blocked "+data.target.id);
+    }
+    
+    var say = function(message) {
+      $("#stream").append("<li>"+message+"</li>");
+      twttr.anywhere(function(T) {      
+        T("#stream").linkifyUsers();
+      });
     }
   </script>
 </head>
