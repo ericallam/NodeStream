@@ -2,22 +2,28 @@
 <head>
   <title>NodeStream</title>
   <script type="text/javascript" src="jquery-1.4.2.min.js"></script> >
+  <script type="text/javascript" src="javascripts/swfobject.js"></script>
+  <script type="text/javascript" src="javascripts/FABridge.js"></script>
+  <script type="text/javascript" src="javascripts/web_socket.js"></script>
+  
   <script type="text/javascript">
-    new WebSocket("ws://localhost:8080/userstream");
-    webSocket.onopen = function(event){
-      $("#status").html("connecting...");
-      webSocket.send('start');
-    };
+    $(function() {      
+      new WebSocket("ws://localhost:8080/userstream");
+      webSocket.onopen = function(event){
+        $("#status").html("connecting...");
+        webSocket.send('start');
+      };
 
-    webSocket.onmessage = function(event){
-      // var object = JSON.parse(event.data);
-      // $("#stream").append("<li>"+object.text+"</li>");
-      $("#stream").append("<li>"+event.data+"</li>");
-    };
+      webSocket.onmessage = function(event){
+        // var object = JSON.parse(event.data);
+        // $("#stream").append("<li>"+object.text+"</li>");
+        $("#stream").append("<li>"+event.data+"</li>");
+      };
 
-    webSocket.onclose = function(event){
-      $("#status").html("not connected");
-    };    
+      webSocket.onclose = function(event){
+        $("#status").html("not connected");
+      };    
+    });
   </script>
 
 
