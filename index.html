@@ -1,116 +1,140 @@
 <html>
 <head>
   <title>NodeStream</title>
-  <script type="text/javascript" src="jquery-1.4.2.min.js"></script> >
+  <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
   <script type="text/javascript" src="javascripts/swfobject.js"></script>
   <script type="text/javascript" src="javascripts/FABridge.js"></script>
   <script type="text/javascript" src="javascripts/web_socket.js"></script>
-  
+  <script src="http://platform.twitter.com/anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>
+
   <script type="text/javascript">
-    $(function() {
-      var retweet = function(data){
-        console.log('RETWEET');
-        $("#stream").append("<li>"+data.user.screen_name+" retweeted: "+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text+"</li>");
-      }
-      
-      var tweet = function(data){
-        console.log('TWEET');
-        $("#stream").append("<li>"+data.user.screen_name+": "+data.text+"</li>");
-      }
-      
-      var favorite = function(data){
-        console.log('FAVORITE');
-        $("#stream").append("<li>"+data.source.id+" favorited "+data.target_object.id+"</li>");
-      }
-      
-      var unfavorite = function(data){
-        console.log('UNFAVORITE');
-        $("#stream").append("<li>"+data.source.id+" unfavorited "+data.target_object.id+"</li>");
-      }
-      
-      var follow = function(data){
-        // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-        console.log('FOLLOW');
-        $("#stream").append("<li>"+data.source.id+" followed "+data.target.id+"</li>");
-      }
-      
-      var unfollow = function(data){
-        // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-        console.log('UNFOLLOW');
-        $("#stream").append("<li>"+data.source.id+" unfollowed "+data.target.id+"</li>");
-      }
-      
-      var block = function(data){
-        // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-        console.log('BLOCK');
-        $("#stream").append("<li>"+data.source.id+" blocked "+data.target.id+"</li>");
-      }
+    WebSocket.__swfLocation = "flash/WebSocketMain.swf";
+    var webSocket = new WebSocket("ws://localhost:8080/userstream"),
+        buffer = "",
+        friends = [];
+
+    // twttr.anywhere.config({
+    //   assetHost: 'twitter-anywhere.s3.amazonaws.com'
+    // });
+    // 
+    // twttr.anywhere(function(T) {
+    //   alert("connecting to twitter")
+    //   
+    //   if (T.isConnected()) {
+    //     alert("already connected to twitter")
+    //     connect();
+    //   } else {
+    //     T('#login').connectButton({ authComplete: connect, signOut: disconnect });
+    //     $("#login").show();
+    //   }
+    // });
     
-      var webSocket = new WebSocket("ws://localhost:8080/userstream"),
-          buffer = "",
-          friends = [];
-      
-      webSocket.onopen = function(event){
-        $("#status").html("connecting...");
-        webSocket.send('start');
-      };
+    function connect() {
+      alert("connected to twitter")
+      // $("#status").html("connecting...");
+      // webSocket.send('start');
+    }
+    function disconnect() {
+      alert("disconnected")
+    }
+    
+    webSocket.onopen = function(event){
+      $("#status").html("connecting...");
+      webSocket.send('start');
+    };
 
-      webSocket.onmessage = function(event){
-        var object;
-        try {
-          buffer += event.data;
-          object = JSON.parse(buffer);
-          console.log(object);
-          if(object.friends) {
-            friends = object.friends;
-          } else if(object.text){
-            // this is a tweet
-            if(object.retweeted_status){
-              retweet(object);
-            }else{
-              tweet(object);
-            }
-          } else if(object.event){
-            switch(object.event) {
-              case 'favorite':
-                favorite(object);
-                break;
-              case 'unfavorite':
-                unfavorite(object);
-                break;
-              case 'unfollow':
-                unfollow(object);
-                break;
-              case 'follow':
-                follow(object);
-                break;
-              case 'block':
-                block(object);
-                break;
-              default:
-                // do nothing
-              }
-
-          } else {
-            $("#stream").append("<li>"+event.data+"</li>");
+    webSocket.onmessage = function(event){
+      var object;
+      try {
+        buffer += event.data;
+        object = JSON.parse(buffer);
+        console.log(object);
+        if(object.friends) {
+          friends = object.friends;
+        } else if(object.text){
+          // this is a tweet
+          if(object.retweeted_status){
+            retweet(object);
+          }else{
+            tweet(object);
           }
-          buffer = "";
-        } catch(e) {
-          // eat the buffer
+        } else if(object.event){
+          switch(object.event) {
+            case 'favorite':
+              favorite(object);
+              break;
+            case 'unfavorite':
+              unfavorite(object);
+              break;
+            case 'unfollow':
+              unfollow(object);
+              break;
+            case 'follow':
+              follow(object);
+              break;
+            case 'block':
+              block(object);
+              break;
+            default:
+              // do nothing
+            }
+
+        } else {
+          $("#stream").append("<li>"+event.data+"</li>");
         }
-      };
+        buffer = "";
+      } catch(e) {
+        // eat the buffer
+      }
+    };
 
-      webSocket.onclose = function(event){
-        $("#status").html("not connected");
-      };    
-    });
-  </script>
-
-
+    webSocket.onclose = function(event){
+      $("#status").html("not connected");
+    };
+    
+    var retweet = function(data){
+      console.log('RETWEET');
+      $("#stream").append("<li>"+data.user.screen_name+" retweeted: "+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text+"</li>");
+    }
+    
+    var tweet = function(data){
+      console.log('TWEET');
+      $("#stream").append("<li>"+data.user.screen_name+": "+data.text+"</li>");
+    }
+    
+    var favorite = function(data){
+      console.log('FAVORITE');
+      $("#stream").append("<li>"+data.source.id+" favorited "+data.target_object.id+"</li>");
+    }
+    
+    var unfavorite = function(data){
+      console.log('UNFAVORITE');
+      $("#stream").append("<li>"+data.source.id+" unfavorited "+data.target_object.id+"</li>");
+    }
+    
+    var follow = function(data){
+      // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
+      console.log('FOLLOW');
+      $("#stream").append("<li>"+data.source.id+" followed "+data.target.id+"</li>");
+    }
+    
+    var unfollow = function(data){
+      // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
+      console.log('UNFOLLOW');
+      $("#stream").append("<li>"+data.source.id+" unfollowed "+data.target.id+"</li>");
+    }
+    
+    var block = function(data){
+      // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
+      console.log('BLOCK');
+      $("#stream").append("<li>"+data.source.id+" blocked "+data.target.id+"</li>");
+    }
   </script>
 </head>
 
   <h2>Stream</h2>
-  <span id="status">Not connected...</span>
+  <div id="login" style="display:none;"></div>
+  <div id="status"><p>Not connected...</p></div>
   <ul id="stream"></ul>
+  <ul id="friends"></ul>
 </html>
