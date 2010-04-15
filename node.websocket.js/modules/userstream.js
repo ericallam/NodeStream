@@ -1,12 +1,13 @@
 var sys = require('sys'),
-   http = require('http');
+    http = require('http'),
+	  pass =  require('../../pass');
 var base64 = require('../../base64');
 
 var Module = this.Module = function(){
   this.start = function(connection){
     var chirpstream = http.createClient(80, 'chirpstream.twitter.com');
-    var username = 'thepalephantom';
-    var password = 'maverick1$good';
+    var username = pass.username;
+    var password = pass.password;
     var auth = username + ':' + password;
     auth = 'Basic ' + base64.encode(auth);
     sys.puts(auth);
