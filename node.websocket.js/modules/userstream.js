@@ -1,6 +1,6 @@
 var sys = require('sys'),
    http = require('http');
-var base64 = require('./base64');
+var base64 = require('../../base64');
 
 var Module = this.Module = function(){
   this.start = function(connection){
@@ -14,8 +14,8 @@ var Module = this.Module = function(){
     request.should_keep_alive = true;
     request.addListener('response', function (response) {
         if(response.statusCode == 200){
-        sys.puts('STATUS: ' + response.statusCode);
-        sys.puts('HEADERS: ' + JSON.stringify(response.headers));
+        sys.debug(sys.inspect('STATUS: ' + response.statusCode));
+        sys.debug(sys.inspect('HEADERS: ' + JSON.stringify(response.headers)));
         response.setEncoding('utf8');
         response.addListener('data', function (chunk) {
           sys.debug(sys.inspect(chunk));
@@ -35,6 +35,7 @@ var Module = this.Module = function(){
 
 Module.prototype.onData = function(data, connection){
   if (data == 'start'){
+    sys.debug(sys.inspect('in start connection'));
     this.start(connection);
   }  
 };
