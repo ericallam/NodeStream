@@ -7,7 +7,45 @@
   <script type="text/javascript" src="javascripts/web_socket.js"></script>
   
   <script type="text/javascript">
-    $(function() {      
+    $(function() {
+      var retweet = function(data){
+        console.log('RETWEET');
+        $("#stream").append("<li>"+data.user.screen_name+" retweeted: "+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text+"</li>");
+      }
+      
+      var tweet = function(data){
+        console.log('TWEET');
+        $("#stream").append("<li>"+data.user.screen_name+": "+data.text+"</li>");
+      }
+      
+      var favorite = function(data){
+        console.log('FAVORITE');
+        $("#stream").append("<li>"+data.source.id+" favorited "+data.target_object.id+"</li>");
+      }
+      
+      var unfavorite = function(data){
+        console.log('UNFAVORITE');
+        $("#stream").append("<li>"+data.source.id+" unfavorited "+data.target_object.id+"</li>");
+      }
+      
+      var follow = function(data){
+        // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
+        console.log('FOLLOW');
+        $("#stream").append("<li>"+data.source.id+" followed "+data.target.id+"</li>");
+      }
+      
+      var unfollow = function(data){
+        // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
+        console.log('UNFOLLOW');
+        $("#stream").append("<li>"+data.source.id+" unfollowed "+data.target.id+"</li>");
+      }
+      
+      var block = function(data){
+        // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
+        console.log('BLOCK');
+        $("#stream").append("<li>"+data.source.id+" blocked "+data.target.id+"</li>");
+      }
+    
       var webSocket = new WebSocket("ws://localhost:8080/userstream"),
           buffer = "",
           friends = [];
@@ -20,17 +58,45 @@
       webSocket.onmessage = function(event){
         var object;
         try {
-          object = JSON.parse(event.data);
+          buffer += event.data;
+          object = JSON.parse(buffer);
           console.log(object);
           if(object.friends) {
             friends = object.friends;
-            $("#stream").append("<li>Loaded friends..."+friends+"</li>");
+          } else if(object.text){
+            // this is a tweet
+            if(object.retweeted_status){
+              retweet(object);
+            }else{
+              tweet(object);
+            }
+          } else if(object.event){
+            switch(object.event) {
+              case 'favorite':
+                favorite(object);
+                break;
+              case 'unfavorite':
+                unfavorite(object);
+                break;
+              case 'unfollow':
+                unfollow(object);
+                break;
+              case 'follow':
+                follow(object);
+                break;
+              case 'block':
+                block(object);
+                break;
+              default:
+                // do nothing
+              }
+
           } else {
             $("#stream").append("<li>"+event.data+"</li>");
           }
           buffer = "";
         } catch(e) {
-          buffer += event.data;
+          // eat the buffer
         }
       };
 
