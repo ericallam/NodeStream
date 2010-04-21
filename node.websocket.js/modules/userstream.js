@@ -11,7 +11,7 @@ var Module = this.Module = function(){
     var auth = username + ':' + password;
     auth = 'Basic ' + base64.encode(auth);
     sys.puts(auth);
-    var request = chirpstream.request('GET', '/2b/user.json?track=chirp', {'host': 'chirpstream.twitter.com', 'Authorization': auth});
+    var request = chirpstream.request('GET', '/2b/user.json', {'host': 'chirpstream.twitter.com', 'Authorization': auth});
     request.should_keep_alive = true;
     request.addListener('response', function (response) {
         if(response.statusCode == 200){
