@@ -92,28 +92,7 @@
 
     webSocket.onclose = function(event){
       $("#status").html("not connected");
-    };
-  
-    var delay_fill = function(user_ids, func){
-      // make sure all user_ids are in the user has before calling func
-      var all_found = false;
-      var found_count;
-      while(!all_found){
-        found_count = 0;
-        for (var i=0; i < user_ids.length; i++) {
-          if(users[user_ids[i]]) found_count++
-        };
-        
-        if(found_count == user_ids.length){
-          all_found = true;
-        }else{
-          setTimeout(function() {}, 10);
-        }
-      }
-      
-      func();
-    }
-    
+    };    
     
     var retweet = function(data){
       console.log('RETWEET');
