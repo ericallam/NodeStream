@@ -1,0 +1,9 @@
+To get setup:
+
+Note: This probably won't work now. Have to wait until Twitter turns on these changes to the StreamingAPI publicaly again.
+
+Install the ghost gem to manage hosts:
+- gem install ghost
+- ghost add nodestream.local
+
+Update the pass.js with your username/password.

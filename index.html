@@ -1,6 +1,7 @@
 <html>
 <head>
   <title>NodeStream</title>
+  <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
   <script type="text/javascript" src="javascripts/swfobject.js"></script>
   <script type="text/javascript" src="javascripts/FABridge.js"></script>
@@ -11,7 +12,7 @@
   <script type="text/javascript">
   
     function connect() {
-      $("#status").html("connecting...");
+      $("#status").html("connected");
       webSocket.send('start');
     }
     function disconnect() {
@@ -91,56 +92,109 @@
       $("#status").html("not connected");
     };
     
+    
+    var update_users_by_id = function(u) {
+      $(".twitter_"+u.id).html("@"+u.screenName);
+      twttr.anywhere(function(T) {
+        T("#stream").hovercards();
+      });
+    }
+    
+    var user_by_id = function(id) {
+      twttr.anywhere(function(T) {
+         T.User.find(id, { 'success': update_users_by_id }) 
+      });
+      return '<span class="twitter_'+id+'">'+id+'</span>';
+    }
+  
     var retweet = function(data){
       console.log('RETWEET');
-      say("@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text);
+      say("retweet", "@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text);
     }
     
     var tweet = function(data){
       console.log('TWEET');
-      say("@"+data.user.screen_name+": "+data.text);
+      say("tweet", "<img class='action_avatar' src='"+data.user.profile_image_url+"' alt='avatar for "+data.user.screen_name+"' /> <p class='tweet_content'>@"+data.user.screen_name+": "+data.text+"</p><p class='tweet_meta;>Tweeted at "+data.createdAt+"</p>");
     }
     
     var favorite = function(data){
       console.log('FAVORITE');
-      say(data.source.id+" favorited "+data.target_object.id);
+      say("favorite", user_by_id(data.source.id)+" favorited "+user_by_id(data.target_object.id));
     }
     
     var unfavorite = function(data){
       console.log('UNFAVORITE');
-      say(data.source.id+" unfavorited "+data.target_object.id);
+      say(user_by_id(data.source.id)+" unfavorited "+user_by_id(data.target_object.id));
     }
     
     var follow = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('FOLLOW');
-      say(data.source.id+" followed "+data.target.id);
+      say("follow", user_by_id(data.source.id) + " followed " + user_by_id(data.target.id));
     }
     
     var unfollow = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('UNFOLLOW');
-      say(data.source.id+" unfollowed "+data.target.id);
+      say("unfollow", user_by_id(data.source.id)+" unfollowed "+user_by_id(data.target.id));
     }
     
     var block = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('BLOCK');
-      say(data.source.id+" blocked "+data.target.id);
+      say("block", data.source.id+" blocked "+data.target.id);
     }
     
-    var say = function(message) {
-      $("#stream").append("<li>"+message+"</li>");
-      twttr.anywhere(function(T) {      
-        T("#stream li:last-child").hovercards();
+    var say = function(type, message) {
+      $("#stream").append("<li class='message_type_"+type+"'>"+message+"</li>");
+      twttr.anywhere(function(T) {
+        T("#stream").hovercards();
       });
     }
+    
+    $(function() {
+      $("#stream_types input").change(function(e) {
+        var $t = $(e.currentTarget),
+            type = $t.val(),
+            checked = $t.is(":checked");
+        if(checked) { $(".message_type_"+type).fadeIn(); }
+        else { $(".message_type_"+type).fadeOut(); }
+      });
+    });
   </script>
 </head>
-
-  <h2>Stream</h2>
-  <div id="login" style="display:none;"></div>
-  <div id="status"><p>Not connected...</p></div>
-  <ul id="stream"></ul>
-  <ul id="friends"></ul>
+<body>
+  <div id="main">
+    <div id="content">
+      <h2>NodeStream</h2>
+      <ul id="stream"></ul>
+    </div>
+    
+    <ul id="sidebar">
+      <li>
+        <h3>Status</h3>
+        <div id="login" style="display:none;"></div>
+        <div id="status"><p>Not connected...</p></div>
+      </li>
+      <li>
+        <h3>Current Searches</h3>
+        <ul>
+          <li><input type="checkbox" checked="checked" value="chirp" /> Chirp</li>
+        </ul>
+      </li>
+      <li>
+        <h3>Stream</h3>
+        <ul id="stream_types">
+          <li><input type="checkbox" checked="checked" value="tweet" /> Tweets</li>
+          <li><input type="checkbox" checked="checked" value="retweet" /> Retweets</li>
+          <li><input type="checkbox" checked="checked" value="follow" /> Follows</li>
+          <li><input type="checkbox" checked="checked" value="unfollow" /> Unfollows</li>
+          <li><input type="checkbox" checked="checked" value="block" /> Blocks</li>
+          <li><input type="checkbox" checked="checked" value="favorite" /> Favorites</li>
+          <li><input type="checkbox" checked="checked" value="unfavorite" /> Unfavorites</li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</body>
 </html>

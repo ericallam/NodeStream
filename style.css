@@ -1,0 +1,10 @@
+ul { list-style:none; margin:0; padding:0;}
+#main { width:960px; margin:0 auto; }
+#content, #sidebar li { border:1px solid #ccc; -moz-border-radius:4px; -webkit-border-radius:4px; padding:10px; }
+#sidebar li { margin-bottom:10px; }
+#sidebar li li { border:none; padding:4px 0; margin:4px 0; }
+ 
+#content { width: 680px; float:left; }
+#sidebar { width:220px; float:right;}
+
+li .action_avatar { float:left; }
