@@ -8,3 +8,4 @@ ul { list-style:none; margin:0; padding:0;}
 #sidebar { width:220px; float:right;}
 
 li .action_avatar { float:left; }
+#stream li { clear:both; }

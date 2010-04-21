@@ -3,6 +3,7 @@
   <title>NodeStream</title>
   <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
+  <script type="text/javascript" src="javascripts/twitter_text.js"></script>
   <script type="text/javascript" src="javascripts/swfobject.js"></script>
   <script type="text/javascript" src="javascripts/FABridge.js"></script>
   <script type="text/javascript" src="javascripts/web_socket.js"></script>
@@ -22,8 +23,8 @@
 
     twttr.anywhere.config({
       assetHost: 'twitter-anywhere.s3.amazonaws.com'
-      //assetHost: 'nodestream.local'
     });
+    
     twttr.anywhere(function(T) {
       if (T.isConnected()) {
         connect();
@@ -33,10 +34,11 @@
       }
     });
 
-    WebSocket.__swfLocation = "flash/WebSocketMain.swf";
     var webSocket = new WebSocket("ws://nodestream.local:8080/userstream"),
         buffer = "",
-        friends = [];
+        friends = [],
+        users = {},
+        statuses = {};
 
     // webSocket.onopen = function(event){
     //   $("#status").html("connecting...");
@@ -91,22 +93,28 @@
     webSocket.onclose = function(event){
       $("#status").html("not connected");
     };
-    
-    
-    var update_users_by_id = function(u) {
-      $(".twitter_"+u.id).html("@"+u.screenName);
-      twttr.anywhere(function(T) {
-        T("#stream").hovercards();
-      });
-    }
-    
-    var user_by_id = function(id) {
-      twttr.anywhere(function(T) {
-         T.User.find(id, { 'success': update_users_by_id }) 
-      });
-      return '<span class="twitter_'+id+'">'+id+'</span>';
-    }
   
+    var delay_fill = function(user_ids, func){
+      // make sure all user_ids are in the user has before calling func
+      var all_found = false;
+      var found_count;
+      while(!all_found){
+        found_count = 0;
+        for (var i=0; i < user_ids.length; i++) {
+          if(users[user_ids[i]]) found_count++
+        };
+        
+        if(found_count == user_ids.length){
+          all_found = true;
+        }else{
+          setTimeout(function() {}, 10);
+        }
+      }
+      
+      func();
+    }
+    
+    
     var retweet = function(data){
       console.log('RETWEET');
       say("retweet", "@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text);
@@ -119,24 +127,88 @@
     
     var favorite = function(data){
       console.log('FAVORITE');
-      say("favorite", user_by_id(data.source.id)+" favorited "+user_by_id(data.target_object.id));
+      // {"target":{"id":8438932},"source":{"id":46783},"target_object":{"id":12548122651},"event":"favorite"}
+      // say(user(data.source.id).screenName +" favorited "+data.target_object.id);
+      // id, createdAt, text, source, truncated, inReplyToStatusId, inReplyToUserId, favorited, inReplyToScreenName, geo
+      if(users[data.source.id] && statuses[data.target_object.id]){
+        var user = users[data.source.id];
+        var favorited_user = statuses[data.target_object.id].user;
+        var status = statuses[data.target_object.id]
+        say("favorite", "@"+user.screenName+" favorited @"+favorited_user.screenName+": "+sub_say(status.text));
+      }else{
+        if(users[data.source.id]){
+          find_status(data.target_object.id, function(){
+            favorite(data);
+          });
+        }else if(statuses[data.target_object.id]){
+          find_users([data.source.id], function(){
+            favorite(data)
+          });
+        }else{
+          
+          find_users([data.source.id], function(){
+            find_status(data.target_object.id, function(){
+              favorite(data);
+            });
+          });
+          
+        }
+      }
+      
     }
     
     var unfavorite = function(data){
       console.log('UNFAVORITE');
-      say(user_by_id(data.source.id)+" unfavorited "+user_by_id(data.target_object.id));
+      if(users[data.source.id] && statuses[data.target_object.id]){
+        var user = users[data.source.id];
+        var favorited_user = statuses[data.target_object.id].user;
+        var status = statuses[data.target_object.id]
+        say("unfavorite", "@"+user.screenName+" unfavorited @"+favorited_user.screenName+": "+sub_say(status.text));
+      }else{
+        if(users[data.source.id]){
+          find_status(data.target_object.id, function(){
+            unfavorite(data);
+          });
+        }else if(statuses[data.target_object.id]){
+          find_users([data.source.id], function(){
+            unfavorite(data)
+          });
+        }else{
+          
+          find_users([data.source.id], function(){
+            find_status(data.target_object.id, function(){
+              unfavorite(data);
+            });
+          });
+          
+        }
+      }
     }
     
     var follow = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('FOLLOW');
-      say("follow", user_by_id(data.source.id) + " followed " + user_by_id(data.target.id));
+
+      if(users[data.source.id] && users[data.target.id]){
+        say("follow", "@"+users[data.source.id].screenName+" followed @"+users[data.target.id].screenName);
+      }else{
+        
+        find_users([data.source.id, data.target.id], function(){
+          follow(data);
+        });
+      }
     }
     
     var unfollow = function(data){
       // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
       console.log('UNFOLLOW');
-      say("unfollow", user_by_id(data.source.id)+" unfollowed "+user_by_id(data.target.id));
+      if(users[data.source.id] && users[data.target.id]){
+        say("unfollow", data.source.id+" unfollowed "+data.target.id);
+      }else{
+        find_users([data.source.id, data.target.id], function(){
+          unfollow(data);
+        });
+      }
     }
     
     var block = function(data){
@@ -150,6 +222,42 @@
       twttr.anywhere(function(T) {
         T("#stream").hovercards();
       });
+    }
+    
+    var sub_say = function(message){
+      return "<ul><li>" + message + "</li></ul>"
+    }
+    
+    var find_status = function(status_id, callback){
+      twttr.anywhere(function(T){
+        T.Status.find(status_id, {'success': function(status){
+          
+          statuses[status.id] = status;
+          
+          callback();
+        }});
+      });      
+    }
+    
+    var find_users = function(user_ids, callback) {
+      var user_ids_to_find = [];
+      $.each(user_ids, function(i, user_id){
+        if(!users[user_id]) {
+          user_ids_to_find.push(user_id)
+        }
+      });
+      
+      twttr.anywhere(function(T){
+        T.User.findAll(user_ids_to_find, {'success': function(u){
+          
+          u.each(function(user){
+            users[user.id] = user;
+          });
+          
+          callback();
+        }});
+      });
+      
     }
     
     $(function() {
@@ -180,6 +288,8 @@
         <h3>Current Searches</h3>
         <ul>
           <li><input type="checkbox" checked="checked" value="chirp" /> Chirp</li>
+          <li><input type="checkbox" checked="checked" value="izea" /> Izea</li>
+          <li><input type="checkbox" checked="checked" value="florida" /> Florida</li>
         </ul>
       </li>
       <li>
