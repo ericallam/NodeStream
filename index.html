@@ -20,6 +20,15 @@
       alert("disconnected")
     }
 
+    // twttr.anywhere(function (T) {
+    // 
+    //   T("#tweet_box").tweetBox({
+    //     height: 100,
+    //     width: 600,
+    //     defaultContent: "What is happening?"
+    //   });
+    // 
+    // });
 
     twttr.anywhere.config({
       assetHost: 'twitter-anywhere.s3.amazonaws.com'
@@ -96,7 +105,7 @@
     
     var retweet = function(data){
       console.log('RETWEET');
-      say("retweet", "@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+data.retweeted_status.text);
+      say("retweet", "@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+auto_link(data.retweeted_status.text));
     }
     
     var tweet = function(data){
@@ -118,7 +127,7 @@
         var user = users[data.source.id];
         var favorited_user = statuses[data.target_object.id].user;
         var status = statuses[data.target_object.id]
-        say("favorite", "@"+user.screenName+" favorited @"+favorited_user.screenName+": "+sub_say(status.text));
+        say("favorite", "@"+user.screenName+" favorited @"+favorited_user.screenName+": "+sub_say(auto_link(status.text)));
       }else{
         if(users[data.source.id]){
           find_status(data.target_object.id, function(){
@@ -147,7 +156,7 @@
         var user = users[data.source.id];
         var favorited_user = statuses[data.target_object.id].user;
         var status = statuses[data.target_object.id]
-        say("unfavorite", "@"+user.screenName+" unfavorited @"+favorited_user.screenName+": "+sub_say(status.text));
+        say("unfavorite", "@"+user.screenName+" unfavorited @"+favorited_user.screenName+": "+sub_say(auto_link(status.text)));
       }else{
         if(users[data.source.id]){
           find_status(data.target_object.id, function(){
@@ -244,6 +253,20 @@
       
     }
     
+    var change_search_terms = function(e){
+      var terms = [];
+      $('.search input:checked').each(function(e){
+        terms.push($(this).val());
+      });
+      
+      var terms = terms.join();
+      
+      webSocket.send(JSON.stringify({
+        'method': 'new_search',
+        'search': terms
+      }));
+    }
+    
     $(function() {
       $("#stream_types input").change(function(e) {
         var $t = $(e.currentTarget),
@@ -252,6 +275,8 @@
         if(checked) { $(".message_type_"+type).fadeIn(); }
         else { $(".message_type_"+type).fadeOut(); }
       });
+      
+      $('.search input').change(change_search_terms);
     });
   </script>
 </head>
@@ -259,6 +284,7 @@
   <div id="main">
     <div id="content">
       <h2>NodeStream</h2>
+      <div id="tweet_box"></div>
       <ul id="stream"></ul>
     </div>
     
@@ -270,7 +296,7 @@
       </li>
       <li>
         <h3>Current Searches</h3>
-        <ul>
+        <ul class="search">
           <li><input type="checkbox" checked="checked" value="chirp" /> Chirp</li>
           <li><input type="checkbox" checked="checked" value="izea" /> Izea</li>
           <li><input type="checkbox" checked="checked" value="florida" /> Florida</li>
