@@ -1,0 +1,3 @@
+[submodule "javascripts/twitter-text-js"]
+	path = javascripts/twitter-text-js
+	url = git@github.com:rubymaverick/twitter-text-js.git

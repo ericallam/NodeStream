@@ -3,7 +3,7 @@
   <title>NodeStream</title>
   <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
-  <script type="text/javascript" src="javascripts/twitter_text.js"></script>
+  <script type="text/javascript" src="javascripts/twitter-text-js/lib/twitter-text.js"></script>
   <script type="text/javascript" src="javascripts/swfobject.js"></script>
   <script type="text/javascript" src="javascripts/FABridge.js"></script>
   <script type="text/javascript" src="javascripts/web_socket.js"></script>
@@ -101,7 +101,12 @@
     
     var tweet = function(data){
       console.log('TWEET');
-      say("tweet", "<img class='action_avatar' src='"+data.user.profile_image_url+"' alt='avatar for "+data.user.screen_name+"' /> <p class='tweet_content'>@"+data.user.screen_name+": "+data.text+"</p><p class='tweet_meta;>Tweeted at "+data.createdAt+"</p>");
+      say("tweet", "<img style='height: 48px; width: 48px;' class='action_avatar' src='"+data.user.profile_image_url+"' alt='avatar for "+data.user.screen_name+"' /> <p class='tweet_content'>@"+data.user.screen_name+": "+auto_link(data.text)+"</p><p class='tweet_meta;>Tweeted at "+data.createdAt+"</p>");
+    }
+    
+    var auto_link = function(text){
+      opts = {'target': '_blank'};
+      return TwitterText.auto_link_hashtags(TwitterText.auto_link_urls_custom(text, opts), opts);
     }
     
     var favorite = function(data){
@@ -197,7 +202,7 @@
     }
     
     var say = function(type, message) {
-      $("#stream").append("<li class='message_type_"+type+"'>"+message+"</li>");
+      $("#stream").prepend("<li class='message_type_"+type+"'>"+message+"</li>");
       twttr.anywhere(function(T) {
         T("#stream").hovercards();
       });
