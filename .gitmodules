@@ -1,3 +1,9 @@
 [submodule "javascripts/twitter-text-js"]
 	path = javascripts/twitter-text-js
 	url = git@github.com:rubymaverick/twitter-text-js.git
+[submodule "socket.io"]
+	path = socket.io
+	url = http://github.com/LearnBoost/Socket.IO-node.git
+[submodule "javascripts/socket.io"]
+	path = javascripts/socket.io
+	url = http://github.com/LearnBoost/Socket.IO.git

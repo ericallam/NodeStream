@@ -2,33 +2,19 @@
 <head>
   <title>NodeStream</title>
   <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
-  <script type="text/javascript" src="jquery-1.4.2.min.js"></script>
+  <script type="text/javascript" src="javascripts/jquery-1.4.2.min.js"></script>
   <script type="text/javascript" src="javascripts/twitter-text-js/lib/twitter-text.js"></script>
-  <script type="text/javascript" src="javascripts/swfobject.js"></script>
-  <script type="text/javascript" src="javascripts/FABridge.js"></script>
-  <script type="text/javascript" src="javascripts/web_socket.js"></script>
+  <script type="text/javascript" src="javascripts/socket.io/socket.io.js"></script>
   <script src="http://platform.twitter.com/anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>
   <!--<script src="anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>-->
 
   <script type="text/javascript">
-  
-    function connect() {
-      $("#status").html("connected");
-      webSocket.send('start');
-    }
-    function disconnect() {
-      alert("disconnected")
-    }
-
-    // twttr.anywhere(function (T) {
-    // 
-    //   T("#tweet_box").tweetBox({
-    //     height: 100,
-    //     width: 600,
-    //     defaultContent: "What is happening?"
-    //   });
-    // 
-    // });
+      
+    var webSocket = new io.Socket('localhost', {rememberTransport: false, port: 8080}),
+        buffer = "",
+        friends = [],
+        users = {},
+        statuses = {};
 
     twttr.anywhere.config({
       assetHost: 'twitter-anywhere.s3.amazonaws.com'
@@ -37,27 +23,39 @@
     twttr.anywhere(function(T) {
       if (T.isConnected()) {
         connect();
+        retrieve_saved_searches(T.User.current());
       } else {
         T('#login').connectButton({ authComplete: connect, signOut: disconnect });
         $("#login").show();
       }
     });
 
-    var webSocket = new WebSocket("ws://nodestream.local:8080/userstream"),
-        buffer = "",
-        friends = [],
-        users = {},
-        statuses = {};
+    var connect = function() {
+      webSocket.connect();
+    
+      webSocket.addEvent('connect', function(){
+        $("#status").html("connected");
+      });
+      
+      webSocket.addEvent('close', function(){
+        //
+      });
+      
+      webSocket.addEvent('disconnect', function(){
+        $("#status").html("lost connection..")
+      });
+      
+      webSocket.addEvent('message', handle_message)
+    }
+    
+    var disconnect = function() {
+      alert("disconnected");
+    }
 
-    // webSocket.onopen = function(event){
-    //   $("#status").html("connecting...");
-    //   webSocket.send('start');
-    // };
-
-    webSocket.onmessage = function(event){
+    var handle_message = function(data){
       var object;
       try {
-        buffer += event.data;
+        buffer += data;
         object = JSON.parse(buffer);
         console.log(object);
         if(object.friends) {
@@ -91,16 +89,12 @@
             }
 
         } else {
-          $("#stream").append("<li>"+event.data+"</li>");
+          $("#stream").append("<li>"+data+"</li>");
         }
         buffer = "";
       } catch(e) {
         // eat the buffer
       }
-    };
-
-    webSocket.onclose = function(event){
-      $("#status").html("not connected");
     };    
     
     var retweet = function(data){
@@ -250,6 +244,10 @@
           callback();
         }});
       });
+      
+    }
+    
+    var retrieve_saved_searches = function(u){
       
     }
     
