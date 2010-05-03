@@ -1,6 +1,6 @@
 To get setup:
 
-Note: This probably won't work now. Have to wait until Twitter turns on these changes to the StreamingAPI publicaly again.
+Install Node >= 1.9.3
 
 Install the ghost gem to manage hosts:
 - gem install ghost

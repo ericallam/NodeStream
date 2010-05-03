@@ -53,48 +53,37 @@
     }
 
     var handle_message = function(data){
-      var object;
-      try {
-        buffer += data;
-        object = JSON.parse(buffer);
+        object = JSON.parse(data);
         console.log(object);
-        if(object.friends) {
-          friends = object.friends;
-        } else if(object.text){
-          // this is a tweet
-          if(object.retweeted_status){
-            retweet(object);
-          }else{
-            tweet(object);
+        
+        switch(object.type) {
+          case 'friends':
+            friends = object.payload;
+            break;
+          case 'status':
+            tweet(object.payload);
+            break;
+          case 'retweet':
+            retweet(object.payload);
+            break;
+          case 'favorite':
+            favorite(object.payload);
+            break;
+          case 'unfavorite':
+            unfavorite(object.payload);
+            break;
+          case 'unfollow':
+            unfollow(object.payload);
+            break;
+          case 'follow':
+            follow(object.payload);
+            break;
+          case 'block':
+            block(object.payload);
+            break;
+          default:
+            // do nothing
           }
-        } else if(object.event){
-          switch(object.event) {
-            case 'favorite':
-              favorite(object);
-              break;
-            case 'unfavorite':
-              unfavorite(object);
-              break;
-            case 'unfollow':
-              unfollow(object);
-              break;
-            case 'follow':
-              follow(object);
-              break;
-            case 'block':
-              block(object);
-              break;
-            default:
-              // do nothing
-            }
-
-        } else {
-          $("#stream").append("<li>"+data+"</li>");
-        }
-        buffer = "";
-      } catch(e) {
-        // eat the buffer
-      }
     };    
     
     var retweet = function(data){
