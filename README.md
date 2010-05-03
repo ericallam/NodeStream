@@ -17,16 +17,19 @@ A twitter userstream app using node.js and browser websockets
 
 
 * add nodestream.local to your hosts file (pointing to 127.0.0.1)
-* Setup apache to serve the files:
+* Setup apache to serve the files
 
-    `<VirtualHost nodestream.local:80>
-      ServerName nodestream.local
-      DocumentRoot "/path/to/nodestream"
-      <directory "/path/to/nodestream">
-        Order allow,deny
-        Allow from all
-      </directory>
-    </VirtualHost>`
+#### Example Apache Config
+
+
+      <VirtualHost nodestream.local:80>
+        ServerName nodestream.local
+        DocumentRoot "/path/to/nodestream"
+        <directory "/path/to/nodestream">
+          Order allow,deny
+          Allow from all
+        </directory>
+      </VirtualHost>
     
 * run the server:
     `node server.js 'username:password'`
