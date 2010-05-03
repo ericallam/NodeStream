@@ -1,9 +1,0 @@
-To get setup:
-
-Install Node >= 1.9.3
-
-Install the ghost gem to manage hosts:
-- gem install ghost
-- ghost add nodestream.local
-
-Update the pass.js with your username/password.
