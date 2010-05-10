@@ -1,0 +1,4 @@
+<li>
+  <input type="checkbox" value="<%= search.name %>" />
+  <a href="#/search/<%= search.name %>"><%= search.name %></a>
+</li>

@@ -3,269 +3,12 @@
   <title>NodeStream</title>
   <link href="style.css" media="screen" rel="stylesheet" type="text/css" />
   <script type="text/javascript" src="javascripts/jquery-1.4.2.min.js"></script>
+  <script type="text/javascript" src="javascripts/sammy/sammy-latest.min.js"></script>
+  <script src="javascripts/sammy/plugins/sammy.template.js" type="text/javascript" charset="utf-8"></script>
   <script type="text/javascript" src="javascripts/twitter-text-js/lib/twitter-text.js"></script>
   <script type="text/javascript" src="javascripts/socket.io/socket.io.js"></script>
   <script src="http://platform.twitter.com/anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>
-  <!--<script src="anywhere.js?id=AXn0VXQ228efXhXoZ2f4w&v=chirp_preview"></script>-->
-
-  <script type="text/javascript">
-      
-    var webSocket = new io.Socket('localhost', {rememberTransport: false, port: 8080}),
-        buffer = "",
-        friends = [],
-        users = {},
-        statuses = {};
-
-    twttr.anywhere.config({
-      assetHost: 'twitter-anywhere.s3.amazonaws.com'
-    });
-    
-    twttr.anywhere(function(T) {
-      if (T.isConnected()) {
-        connect();
-        retrieve_saved_searches(T.User.current());
-      } else {
-        T('#login').connectButton({ authComplete: connect, signOut: disconnect });
-        $("#login").show();
-      }
-    });
-
-    var connect = function() {
-      webSocket.connect();
-    
-      webSocket.addEvent('connect', function(){
-        $("#status").html("connected");
-      });
-      
-      webSocket.addEvent('close', function(){
-        //
-      });
-      
-      webSocket.addEvent('disconnect', function(){
-        $("#status").html("lost connection..")
-      });
-      
-      webSocket.addEvent('message', handle_message)
-    }
-    
-    var disconnect = function() {
-      alert("disconnected");
-    }
-
-    var handle_message = function(data){
-        object = JSON.parse(data);
-        console.log(object);
-        
-        switch(object.type) {
-          case 'friends':
-            friends = object.payload;
-            break;
-          case 'status':
-            tweet(object.payload);
-            break;
-          case 'retweet':
-            retweet(object.payload);
-            break;
-          case 'favorite':
-            favorite(object.payload);
-            break;
-          case 'unfavorite':
-            unfavorite(object.payload);
-            break;
-          case 'unfollow':
-            unfollow(object.payload);
-            break;
-          case 'follow':
-            follow(object.payload);
-            break;
-          case 'block':
-            block(object.payload);
-            break;
-          default:
-            // do nothing
-          }
-    };    
-    
-    var retweet = function(data){
-      console.log('RETWEET');
-      say("retweet", "@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+auto_link(data.retweeted_status.text));
-    }
-    
-    var tweet = function(data){
-      console.log('TWEET');
-      say("tweet", "<img style='height: 48px; width: 48px;' class='action_avatar' src='"+data.user.profile_image_url+"' alt='avatar for "+data.user.screen_name+"' /> <p class='tweet_content'>@"+data.user.screen_name+": "+auto_link(data.text)+"</p><p class='tweet_meta;>Tweeted at "+data.createdAt+"</p>");
-    }
-    
-    var auto_link = function(text){
-      opts = {'target': '_blank'};
-      return TwitterText.auto_link_hashtags(TwitterText.auto_link_urls_custom(text, opts), opts);
-    }
-    
-    var favorite = function(data){
-      console.log('FAVORITE');
-      // {"target":{"id":8438932},"source":{"id":46783},"target_object":{"id":12548122651},"event":"favorite"}
-      // say(user(data.source.id).screenName +" favorited "+data.target_object.id);
-      // id, createdAt, text, source, truncated, inReplyToStatusId, inReplyToUserId, favorited, inReplyToScreenName, geo
-      if(users[data.source.id] && statuses[data.target_object.id]){
-        var user = users[data.source.id];
-        var favorited_user = statuses[data.target_object.id].user;
-        var status = statuses[data.target_object.id]
-        say("favorite", "@"+user.screenName+" favorited @"+favorited_user.screenName+": "+sub_say(auto_link(status.text)));
-      }else{
-        if(users[data.source.id]){
-          find_status(data.target_object.id, function(){
-            favorite(data);
-          });
-        }else if(statuses[data.target_object.id]){
-          find_users([data.source.id], function(){
-            favorite(data)
-          });
-        }else{
-          
-          find_users([data.source.id], function(){
-            find_status(data.target_object.id, function(){
-              favorite(data);
-            });
-          });
-          
-        }
-      }
-      
-    }
-    
-    var unfavorite = function(data){
-      console.log('UNFAVORITE');
-      if(users[data.source.id] && statuses[data.target_object.id]){
-        var user = users[data.source.id];
-        var favorited_user = statuses[data.target_object.id].user;
-        var status = statuses[data.target_object.id]
-        say("unfavorite", "@"+user.screenName+" unfavorited @"+favorited_user.screenName+": "+sub_say(auto_link(status.text)));
-      }else{
-        if(users[data.source.id]){
-          find_status(data.target_object.id, function(){
-            unfavorite(data);
-          });
-        }else if(statuses[data.target_object.id]){
-          find_users([data.source.id], function(){
-            unfavorite(data)
-          });
-        }else{
-          
-          find_users([data.source.id], function(){
-            find_status(data.target_object.id, function(){
-              unfavorite(data);
-            });
-          });
-          
-        }
-      }
-    }
-    
-    var follow = function(data){
-      // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-      console.log('FOLLOW');
-
-      if(users[data.source.id] && users[data.target.id]){
-        say("follow", "@"+users[data.source.id].screenName+" followed @"+users[data.target.id].screenName);
-      }else{
-        
-        find_users([data.source.id, data.target.id], function(){
-          follow(data);
-        });
-      }
-    }
-    
-    var unfollow = function(data){
-      // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-      console.log('UNFOLLOW');
-      if(users[data.source.id] && users[data.target.id]){
-        say("unfollow", data.source.id+" unfollowed "+data.target.id);
-      }else{
-        find_users([data.source.id, data.target.id], function(){
-          unfollow(data);
-        });
-      }
-    }
-    
-    var block = function(data){
-      // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-      console.log('BLOCK');
-      say("block", data.source.id+" blocked "+data.target.id);
-    }
-    
-    var say = function(type, message) {
-      $("#stream").prepend("<li class='message_type_"+type+"'>"+message+"</li>");
-      twttr.anywhere(function(T) {
-        T("#stream").hovercards();
-      });
-    }
-    
-    var sub_say = function(message){
-      return "<ul><li>" + message + "</li></ul>"
-    }
-    
-    var find_status = function(status_id, callback){
-      twttr.anywhere(function(T){
-        T.Status.find(status_id, {'success': function(status){
-          
-          statuses[status.id] = status;
-          
-          callback();
-        }});
-      });      
-    }
-    
-    var find_users = function(user_ids, callback) {
-      var user_ids_to_find = [];
-      $.each(user_ids, function(i, user_id){
-        if(!users[user_id]) {
-          user_ids_to_find.push(user_id)
-        }
-      });
-      
-      twttr.anywhere(function(T){
-        T.User.findAll(user_ids_to_find, {'success': function(u){
-          
-          u.each(function(user){
-            users[user.id] = user;
-          });
-          
-          callback();
-        }});
-      });
-      
-    }
-    
-    var retrieve_saved_searches = function(u){
-      
-    }
-    
-    var change_search_terms = function(e){
-      var terms = [];
-      $('.search input:checked').each(function(e){
-        terms.push($(this).val());
-      });
-      
-      var terms = terms.join();
-      
-      webSocket.send(JSON.stringify({
-        'method': 'new_search',
-        'search': terms
-      }));
-    }
-    
-    $(function() {
-      $("#stream_types input").change(function(e) {
-        var $t = $(e.currentTarget),
-            type = $t.val(),
-            checked = $t.is(":checked");
-        if(checked) { $(".message_type_"+type).fadeIn(); }
-        else { $(".message_type_"+type).fadeOut(); }
-      });
-      
-      $('.search input').change(change_search_terms);
-    });
-  </script>
+  <script type="text/javascript" src="javascripts/nodestream.js"></script>
 </head>
 <body>
   <div id="main">
@@ -281,24 +24,19 @@
         <div id="login" style="display:none;"></div>
         <div id="status"><p>Not connected...</p></div>
       </li>
-      <li>
-        <h3>Current Searches</h3>
-        <ul class="search">
-          <li><input type="checkbox" checked="checked" value="chirp" /> Chirp</li>
-          <li><input type="checkbox" checked="checked" value="izea" /> Izea</li>
-          <li><input type="checkbox" checked="checked" value="florida" /> Florida</li>
-        </ul>
+      <li id="search_component">
+        <h3>Saved Searches</h3>
       </li>
       <li>
         <h3>Stream</h3>
         <ul id="stream_types">
-          <li><input type="checkbox" checked="checked" value="tweet" /> Tweets</li>
-          <li><input type="checkbox" checked="checked" value="retweet" /> Retweets</li>
-          <li><input type="checkbox" checked="checked" value="follow" /> Follows</li>
-          <li><input type="checkbox" checked="checked" value="unfollow" /> Unfollows</li>
-          <li><input type="checkbox" checked="checked" value="block" /> Blocks</li>
-          <li><input type="checkbox" checked="checked" value="favorite" /> Favorites</li>
-          <li><input type="checkbox" checked="checked" value="unfavorite" /> Unfavorites</li>
+          <li><input type="checkbox" checked="checked" value="tweet" id="tweet_checkbox" /> Tweets</li>
+          <li><input type="checkbox" checked="checked" value="retweet" id="retweet_checkbox" /> Retweets</li>
+          <li><input type="checkbox" checked="checked" value="follow" id="follow_checkbox" /> Follows</li>
+          <li><input type="checkbox" checked="checked" value="unfollow" id="unfollow_checkbox" /> Unfollows</li>
+          <li><input type="checkbox" checked="checked" value="block" id="block_checkbox" /> Blocks</li>
+          <li><input type="checkbox" checked="checked" value="favorite" id="favorite_checkbox" /> Favorites</li>
+          <li><input type="checkbox" checked="checked" value="unfavorite" id="unfavorite_checkbox" /> Unfavorites</li>
         </ul>
       </li>
     </ul>
