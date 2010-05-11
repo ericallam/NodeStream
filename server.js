@@ -80,8 +80,12 @@ var listener = io.listen(server, {
         switch(message['method']) {
           case 'new_search':
             sys.debug(sys.inspect('new_search: ' + message['search']));
-            userstream.make_request(client, {'track': message['search']});
+            userstream.search(message['search'])
+            userstream.stream();
             break;
+          case 'clear_search':
+            userstream.clear_search();
+            userstream.stream();
           default:
           // do nothing
         }

@@ -8,4 +8,5 @@ ul { list-style:none; margin:0; padding:0;}
 #sidebar { width:220px; float:right;}
 
 li .action_avatar { float:left; }
-#stream li { clear:both; }
+#stream li { clear:both; padding-top: 7px; padding-bottom: 7px; border-bottom: 1px dashed #999;}
+#stream li p { padding-left: 55px; }

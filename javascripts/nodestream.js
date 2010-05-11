@@ -235,16 +235,20 @@ var retrieve_saved_searches = function(u, callback){
 
 var change_search_terms = function(e){
   var terms = [];
-  $('.search input:checked').each(function(e){
+  $('#search_component input:checked').each(function(e){
     terms.push($(this).val());
   });
+
+  if(terms.length){
+    webSocket.send(JSON.stringify({
+      'method': 'new_search',
+      'search': terms
+    }));
+  }else{
+    webSocket.send(JSON.stringify({'method': 'clear_search'}));    
+  }
   
-  var terms = terms.join();
-  
-  webSocket.send(JSON.stringify({
-    'method': 'new_search',
-    'search': terms
-  }));
+
 }
 
 var app = $.sammy(function() {
@@ -294,7 +298,7 @@ $(function() {
     else { $(".message_type_"+type).fadeOut(); }
   });
   
-  $('.search input').change(change_search_terms);
+  $('#search_component input').live('change', change_search_terms);
 });
     
 })(jQuery);
