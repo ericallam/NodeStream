@@ -35,7 +35,7 @@ var password = credentials[1];
 var userstream = new UserStream({
   username: username,
   password: password,
-  debug: true
+  debug: false
 });
 
 // socket.io, I choose you
@@ -46,36 +46,49 @@ db.open(function(p_db) {
 		
     	onClientConnect: function(client){
     	  sys.puts("onClientConnect: ");
-    
+    	  
+    	  twitter_event.findEvents(100, function(err, cursor){
+          sys.puts("OLD EVENTS:");
+          cursor.each(function(err, item){
+            if(item){
+              send_to_client(client, item.payload, item.type);
+            }
+          });
+    	  });
+    	      
         userstream
           .onFriends(function(friends){
+            twitter_event.insertEvent('friends', friends);
             send_to_client(client, friends, "friends");
           })
           .onStatus(function(status){
+            twitter_event.insertEvent('status', status);
             send_to_client(client, status, "status");
           })
           .onRetweet(function(retweet){
+            twitter_event.insertEvent('retweet', retweet);
             send_to_client(client, retweet, "retweet");
           })
           .onFavorite(function(favorite){
+            twitter_event.insertEvent('favorite', favorite);
             send_to_client(client, favorite, "favorite");
           })
           .onUnfavorite(function(unfavorite){
+            twitter_event.insertEvent('unfavorite', unfavorite);
             send_to_client(client, unfavorite, "unfavorite");
           })
           .onFollow(function(follow){
+            twitter_event.insertEvent('follow', follow);
             send_to_client(client, follow, "follow");
           })
           .onUnfollow(function(unfollow){
+            twitter_event.insertEvent('unfollow', unfollow);
             send_to_client(client, unfollow, "unfollow");
           })
           .onBlock(function(block){
+            twitter_event.insertEvent('block', block);
             send_to_client(client, block, "block");
           })
-          // .onAll(function(doc){
-          //   sys.puts("==onAll==");
-          //   twitter_event.insertEvent(doc);
-          // });
     
         userstream.stream();
     	},

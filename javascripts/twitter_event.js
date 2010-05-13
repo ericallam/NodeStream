@@ -22,11 +22,13 @@ TwitterEvent.prototype = {
     });
   },
 
-  insertEvent: function(doc) {
-    sys.puts("======INSERTING NEW EVENT======");
-    sys.puts(sys.inspect(doc));
-    this.collection.insertAll([doc]);
+  insertEvent: function(type, doc) {
+    this.collection.insertAll([{type: type, payload: doc}]);
   },
+  
+  findEvents: function(limit, callback){
+    this.collection.find(function(err, cursor){ callback(err, cursor) }, {'limit' : limit});
+  }
 
 };
 
