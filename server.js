@@ -58,7 +58,6 @@ db.open(function(p_db) {
     	      
         userstream
           .onFriends(function(friends){
-            twitter_event.insertEvent('friends', friends);
             send_to_client(client, friends, "friends");
           })
           .onStatus(function(status){

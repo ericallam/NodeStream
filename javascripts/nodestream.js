@@ -1,17 +1,19 @@
 (function($) {
   
-var webSocket = new io.Socket('localhost', {rememberTransport: false, port: 8080}),
-    buffer = "",
-    friends = [],
-    users = {},
-    statuses = {},
-    searches = [];
+var webSocket  = new io.Socket('localhost', {rememberTransport: false, port: 8080}),
+    buffer     = "",
+    friends    = [],
+    users      = {},
+    statuses   = {},
+    searches   = [],
+    message_id = 0
+;
 
 twttr.anywhere.config({
   assetHost: 'twitter-anywhere.s3.amazonaws.com'
 });
 
-var connect = function() {
+var connect = function(app) {
   webSocket.connect();
 
   webSocket.addEvent('connect', function(){
@@ -26,53 +28,34 @@ var connect = function() {
     $("#status").html("lost connection..")
   });
   
-  webSocket.addEvent('message', handle_message)
+  webSocket.addEvent('message', function(obj){
+    handle_message(obj, app);
+  })
 }
 
 var disconnect = function() {
-  alert("disconnected");
+  console.log("You were disconnected from the server.")
 }
 
-var handle_message = function(data){
+var handle_message = function(data, app){
     object = JSON.parse(data);
     console.log(object);
     
-    switch(object.type) {
-      case 'friends':
-        friends = object.payload;
-        break;
-      case 'status':
-        tweet(object.payload);
-        break;
-      case 'retweet':
-        retweet(object.payload);
-        break;
-      case 'favorite':
-        favorite(object.payload);
-        break;
-      case 'unfavorite':
-        unfavorite(object.payload);
-        break;
-      case 'unfollow':
-        unfollow(object.payload);
-        break;
-      case 'follow':
-        follow(object.payload);
-        break;
-      case 'block':
-        block(object.payload);
-        break;
-      default:
-        // do nothing
-      }
+    if(message_handler[object.type]){
+      message_handler[object.type](object, app);
+    }else{
+      console.log("No Message handler for " + object.type + ", rendering nothing...");
+    }
 };    
 
-var retweet = function(data){
+var retweet = function(data, app){
+  data = data.payload;
   console.log('RETWEET');
   say("retweet", "@"+data.user.screen_name+" retweeted: @"+data.retweeted_status.user.screen_name+": "+auto_link(data.retweeted_status.text));
 }
 
-var tweet = function(data){
+var tweet = function(data, app){
+  data = data.payload;
   console.log('TWEET');
   say("tweet", "<img style='height: 48px; width: 48px;' class='action_avatar' src='"+data.user.profile_image_url+"' alt='avatar for "+data.user.screen_name+"' /> <p class='tweet_content'>@"+data.user.screen_name+": "+auto_link(data.text)+"</p><p class='tweet_meta;>Tweeted at "+data.createdAt+"</p>");
 }
@@ -82,7 +65,8 @@ var auto_link = function(text){
   return TwitterText.auto_link_hashtags(TwitterText.auto_link_urls_custom(text, opts), opts);
 }
 
-var favorite = function(data){
+var favorite = function(data, app){
+  data = data.payload;
   console.log('FAVORITE');
   // {"target":{"id":8438932},"source":{"id":46783},"target_object":{"id":12548122651},"event":"favorite"}
   // say(user(data.source.id).screenName +" favorited "+data.target_object.id);
@@ -91,7 +75,7 @@ var favorite = function(data){
     var user = users[data.source.id];
     var favorited_user = statuses[data.target_object.id].user;
     var status = statuses[data.target_object.id]
-    say("favorite", "@"+user.screenName+" favorited @"+favorited_user.screenName+": "+sub_say(auto_link(status.text)));
+    say("favorite", "@"+user.screenName+" favorited @"+favorited_user.screenName+": "+ sub_say(auto_link(status.text)));
   }else{
     if(users[data.source.id]){
       find_status(data.target_object.id, function(){
@@ -114,8 +98,9 @@ var favorite = function(data){
   
 }
 
-var unfavorite = function(data){
-  console.log('UNFAVORITE');
+var unfavorite = function(data, app){
+  data = data.payload;
+  
   if(users[data.source.id] && statuses[data.target_object.id]){
     var user = users[data.source.id];
     var favorited_user = statuses[data.target_object.id].user;
@@ -142,9 +127,8 @@ var unfavorite = function(data){
   }
 }
 
-var follow = function(data){
-  // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-  console.log('FOLLOW');
+var follow = function(data, app){
+  data = data.payload;
 
   if(users[data.source.id] && users[data.target.id]){
     say("follow", "@"+users[data.source.id].screenName+" followed @"+users[data.target.id].screenName);
@@ -156,9 +140,9 @@ var follow = function(data){
   }
 }
 
-var unfollow = function(data){
-  // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-  console.log('UNFOLLOW');
+var unfollow = function(data, app){
+  data = data.payload;
+  
   if(users[data.source.id] && users[data.target.id]){
     say("unfollow", data.source.id+" unfollowed "+data.target.id);
   }else{
@@ -168,22 +152,44 @@ var unfollow = function(data){
   }
 }
 
-var block = function(data){
-  // {"target":{"id":2087021},"source":{"id":28967048},"event":"follow"}
-  console.log('BLOCK');
+var block = function(data, app){
+  data = data.payload;
+  
   say("block", data.source.id+" blocked "+data.target.id);
 }
 
-var say = function(type, message) {
-  var html = $("<li class='message_type_"+type+"'>"+message+"</li>");
-  
-  if(!show_message_type(type)){
-    html.attr('style', "display:none;")
+message_handler = {
+  friends: function(object, app){
+    friends = object.payload;
   }
+  , status:     tweet
+  , retweet:    retweet
+  , favorite:   favorite
+  , unfavorite: unfavorite
+  , follow:     follow
+  , unfollow:   unfollow
+  , block:      block
+}
+
+var say = function(type, message) {
+  
+  var view = {
+    type: type
+    , id: jQuery.uuid('message-')
+    , hide: function(){
+      return (!show_message_type(type));
+    }
+    , message: message
+  }
+  
+  var template = "<li class='message_type_{{type}}' id='{{id}}' {{#hide}}style='display:none'{{/hide}}>{{message}}</li>";
+  
+  var html = Mustache.to_html(template, view);
+  console.log(html);
   
   $("#stream").prepend(html);
   twttr.anywhere(function(T) {
-    T("#stream").hovercards();
+    T("#" + view.id).hovercards();
   });
 }
 
@@ -259,7 +265,7 @@ var app = $.sammy(function() {
   this.get('#/', function(context) {
     twttr.anywhere(function(T) {
       if (T.isConnected()) {
-        connect();
+        connect(app);
         
         // get the saved searches
         retrieve_saved_searches(T.User.current(), function(s){

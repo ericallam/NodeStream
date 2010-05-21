@@ -10,3 +10,6 @@
 [submodule "libs/mongodb"]
 	path = libs/mongodb
 	url = git://github.com/christkv/node-mongodb-native.git
+[submodule "javascripts/mustache"]
+	path = javascripts/mustache
+	url = git://github.com/janl/mustache.js.git
