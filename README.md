@@ -1,6 +1,6 @@
 ## Summary:
 
-A twitter userstream app using node.js, websockets, and mongodb
+A twitter userstream app using node.js, websockets, and mongodb.  And edit!
 
 ## Requirements:
 
